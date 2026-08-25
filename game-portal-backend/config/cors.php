@@ -6,10 +6,9 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // Nhiệm vụ 5f - cho phép React (Vite chạy port 5173) gọi API
-    'allowed_origins' => ['http://localhost:5173'],
+    'allowed_origins' => ['*'],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => ['*'],
 
     'allowed_headers' => ['*'],
 
