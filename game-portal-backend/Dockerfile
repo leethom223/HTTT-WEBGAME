@@ -1,4 +1,4 @@
-# Production Dockerfile for Laravel 11 Backend
+# Production Dockerfile for Laravel 11 Backend on Render
 FROM php:8.3-cli-alpine
 
 WORKDIR /app
@@ -26,8 +26,8 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Set permissions
-RUN chmod -R 777 storage bootstrap/cache
+RUN chmod -R 777 storage bootstrap/cache && chmod +x entrypoint.sh
 
-EXPOSE 8000
+EXPOSE 8000 10000
 
-CMD php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=8000
+CMD ["/bin/sh", "entrypoint.sh"]
