@@ -12,13 +12,13 @@ fi
 touch /app/database/database.sqlite 2>/dev/null || true
 
 # Run database migrations and seeders
-php artisan migrate --force || echo "Migration warning: check DB credentials"
-php artisan db:seed --force || echo "Seeding warning: skipped"
+php artisan migrate --force || echo "Migration notice"
+php artisan db:seed --force || echo "Seeding notice"
 
 # Clear caches for fresh boot
 php artisan config:clear
 php artisan route:clear
 
-# Start PHP Built-in Server with public directory routing
-echo "Laravel API is now serving on 0.0.0.0:$PORT_NUM..."
-exec php -S 0.0.0.0:$PORT_NUM -t public
+# Start PHP Built-in Server with server.php router
+echo "Laravel API is now serving on 0.0.0.0:$PORT_NUM with server.php router..."
+exec php -S 0.0.0.0:$PORT_NUM server.php
