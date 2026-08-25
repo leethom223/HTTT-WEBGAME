@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Brick Breaker Cyber Arkanoid</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      width: 480px;
+      padding: 10px 16px;
+      background: #181b26;
+      border: 1px solid #334155;
+      border-radius: 8px 8px 0 0;
+      font-size: 0.95rem;
+      font-weight: bold;
+    }
+    #gameCanvas {
+      background: #090a0f;
+      border: 2px solid #ec4899;
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 0 25px rgba(236, 72, 153, 0.4);
+      cursor: none;
+    }
+    .guide-text {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <span style="color:#38bdf8" id="scoreTxt">Điểm: 0</span>
+    <span style="color:#f59e0b" id="levelTxt">Màn: 1</span>
+    <span style="color:#ef4444" id="livesTxt">Mạng: ❤️❤️❤️</span>
+  </div>
+  <canvas id="gameCanvas" width="480" height="520"></canvas>
+  <div class="guide-text">Di chuyển chuột hoặc dùng phím <b>← / → (A / D)</b> để điều khiển thanh hứng bóng</div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let score = 0;
+    let lives = 3;
+    let level = 1;
+    let paddleWidth = 85;
+    let paddleHeight = 12;
+    let paddleX = (canvas.width - paddleWidth) / 2;
+
+    let ballRadius = 6;
+    let x = canvas.width / 2;
+    let y = canvas.height - 30;
+    let dx = 3.5;
+    let dy = -3.5;
+    let isLaunched = false;
+    let gameOver = false;
+    let gameWon = false;
+
+    // Bricks
+    const brickRowCount = 5;
+    const brickColumnCount = 7;
+    const brickWidth = 56;
+    const brickHeight = 18;
+    const brickPadding = 8;
+    const brickOffsetTop = 40;
+    const brickOffsetLeft = 20;
+    const brickColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4'];
+
+    let bricks = [];
+    function initBricks() {
+      bricks = [];
+      for (let c = 0; c < brickColumnCount; c++) {
+        bricks[c] = [];
+        for (let r = 0; r < brickRowCount; r++) {
+          bricks[c][r] = { x: 0, y: 0, status: 1, color: brickColors[r % brickColors.length] };
+        }
+      }
+    }
+
+    function resetBall() {
+      x = canvas.width / 2;
+      y = canvas.height - 30;
+      dx = (Math.random() > 0.5 ? 1 : -1) * (3.5 + level * 0.4);
+      dy = -(3.5 + level * 0.4);
+      paddleX = (canvas.width - paddleWidth) / 2;
+      isLaunched = false;
+    }
+
+    function mouseMoveHandler(e) {
+      const relativeX = e.clientX - canvas.offsetLeft;
+      if (relativeX > 0 && relativeX < canvas.width) {
+        paddleX = relativeX - paddleWidth / 2;
+      }
+    }
+
+    function keyDownHandler(e) {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        paddleX = Math.max(0, paddleX - 25);
+      } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        paddleX = Math.min(canvas.width - paddleWidth, paddleX + 25);
+      } else if (e.code === 'Space') {
+        if (gameOver || gameWon) {
+          score = 0; lives = 3; level = 1; gameOver = false; gameWon = false;
+          initBricks();
+          resetBall();
+        } else {
+          isLaunched = true;
+        }
+      }
+    }
+
+    document.addEventListener('mousemove', mouseMoveHandler, false);
+    document.addEventListener('keydown', keyDownHandler, false);
+    canvas.addEventListener('click', () => {
+      if (gameOver || gameWon) {
+        score = 0; lives = 3; level = 1; gameOver = false; gameWon = false;
+        initBricks();
+        resetBall();
+      } else {
+        isLaunched = true;
+      }
+    });
+
+    function collisionDetection() {
+      let activeBricks = 0;
+      for (let c = 0; c < brickColumnCount; c++) {
+        for (let r = 0; r < brickRowCount; r++) {
+          const b = bricks[c][r];
+          if (b.status === 1) {
+            activeBricks++;
+            if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+              dy = -dy;
+              b.status = 0;
+              score += 20;
+              document.getElementById('scoreTxt').innerText = `Điểm: ${score}`;
+            }
+          }
+        }
+      }
+
+      if (activeBricks === 0) {
+        level++;
+        document.getElementById('levelTxt').innerText = `Màn: ${level}`;
+        initBricks();
+        resetBall();
+      }
+    }
+
+    function drawBall() {
+      ctx.beginPath();
+      ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.shadowColor = '#ec4899';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.closePath();
+      ctx.shadowBlur = 0;
+    }
+
+    function drawPaddle() {
+      ctx.beginPath();
+      ctx.roundRect(paddleX, canvas.height - paddleHeight - 6, paddleWidth, paddleHeight, 6);
+      ctx.fillStyle = '#ec4899';
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function drawBricks() {
+      for (let c = 0; c < brickColumnCount; c++) {
+        for (let r = 0; r < brickRowCount; r++) {
+          if (bricks[c][r].status === 1) {
+            const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+            const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+            bricks[c][r].x = brickX;
+            bricks[c][r].y = brickY;
+            ctx.beginPath();
+            ctx.roundRect(brickX, brickY, brickWidth, brickHeight, 3);
+            ctx.fillStyle = bricks[c][r].color;
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.fillRect(brickX, brickY, brickWidth, 3);
+            ctx.closePath();
+          }
+        }
+      }
+    }
+
+    function update() {
+      if (isLaunched && !gameOver && !gameWon) {
+        // Wall Bounce
+        if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+          dx = -dx;
+        }
+        if (y + dy < ballRadius) {
+          dy = -dy;
+        } else if (y + dy > canvas.height - ballRadius - paddleHeight - 6) {
+          if (x > paddleX - 4 && x < paddleX + paddleWidth + 4) {
+            // Angle bounce based on hit position
+            const hitPos = (x - (paddleX + paddleWidth / 2)) / (paddleWidth / 2);
+            dx = hitPos * 4.5;
+            dy = -Math.abs(dy);
+          } else if (y + dy > canvas.height - ballRadius) {
+            lives--;
+            document.getElementById('livesTxt').innerText = `Mạng: ${'❤️'.repeat(Math.max(0, lives))}`;
+            if (lives === 0) {
+              gameOver = true;
+            } else {
+              resetBall();
+            }
+          }
+        }
+
+        x += dx;
+        y += dy;
+        collisionDetection();
+      } else if (!isLaunched && !gameOver) {
+        x = paddleX + paddleWidth / 2;
+        y = canvas.height - paddleHeight - 14;
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = '#090a0f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawBricks();
+      drawBall();
+      drawPaddle();
+
+      if (!isLaunched && !gameOver) {
+        ctx.fillStyle = '#a5b4fc';
+        ctx.font = '14px "Segoe UI"';
+        ctx.textAlign = 'center';
+        ctx.fillText('Nhấp chuột hoặc phím Space để bắn bóng', canvas.width / 2, canvas.height / 2 + 50);
+      }
+
+      if (gameOver) {
+        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 28px "Segoe UI"';
+        ctx.textAlign = 'center';
+        ctx.fillText('HẾT MẠNG - GAME OVER', canvas.width / 2, 220);
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px "Segoe UI"';
+        ctx.fillText(`Tổng điểm: ${score}`, canvas.width / 2, 260);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText('Nhấp vào màn hình để chơi lại', canvas.width / 2, 300);
+      }
+
+      update();
+      requestAnimationFrame(draw);
+    }
+
+    initBricks();
+    resetBall();
+    draw();
+  </script>
+</body>
+</html>

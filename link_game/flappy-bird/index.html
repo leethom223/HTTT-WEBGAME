@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Flappy Bird Cyber Retro</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #gameCanvas {
+      background: #181b26;
+      border: 2px solid #6366f1;
+      border-radius: 12px;
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.4);
+      cursor: pointer;
+    }
+    .guide-text {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="400" height="560"></canvas>
+  <div class="guide-text">Chạm màn hình hoặc nhấn <b>Phím Space / Click chuột</b> để vỗ cánh bay 🕊️</div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let birdY = 250;
+    let birdVelocity = 0;
+    const gravity = 0.35;
+    const jump = -6.5;
+    let score = 0;
+    let highScore = localStorage.getItem('flappy_best') || 0;
+    let pipes = [];
+    let frame = 0;
+    let gameState = 'START'; // 'START' | 'PLAYING' | 'GAMEOVER'
+
+    function reset() {
+      birdY = 250;
+      birdVelocity = 0;
+      score = 0;
+      pipes = [];
+      frame = 0;
+      gameState = 'PLAYING';
+    }
+
+    function flap() {
+      if (gameState === 'START') {
+        gameState = 'PLAYING';
+      } else if (gameState === 'PLAYING') {
+        birdVelocity = jump;
+      } else if (gameState === 'GAMEOVER') {
+        reset();
+      }
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        flap();
+      }
+    });
+    canvas.addEventListener('pointerdown', flap);
+
+    function update() {
+      frame++;
+      if (gameState === 'PLAYING') {
+        birdVelocity += gravity;
+        birdY += birdVelocity;
+
+        // Spawn Pipes
+        if (frame % 90 === 0) {
+          const topHeight = Math.floor(Math.random() * (canvas.height - 240)) + 40;
+          pipes.push({
+            x: canvas.width,
+            top: topHeight,
+            bottom: canvas.height - topHeight - 140, // 140 gap
+            passed: false
+          });
+        }
+
+        // Move Pipes
+        for (let i = pipes.length - 1; i >= 0; i--) {
+          pipes[i].x -= 2.5;
+
+          // Check score
+          if (!pipes[i].passed && pipes[i].x < 80) {
+            pipes[i].passed = true;
+            score++;
+            if (score > highScore) {
+              highScore = score;
+              localStorage.setItem('flappy_best', highScore);
+            }
+          }
+
+          // Collision detection
+          const birdBox = { x: 80, y: birdY, r: 14 };
+          // Top Pipe
+          if (birdBox.x + birdBox.r > pipes[i].x && birdBox.x - birdBox.r < pipes[i].x + 52) {
+            if (birdBox.y - birdBox.r < pipes[i].top || birdBox.y + birdBox.r > canvas.height - pipes[i].bottom) {
+              gameState = 'GAMEOVER';
+            }
+          }
+
+          // Remove off-screen pipes
+          if (pipes[i].x < -60) pipes.splice(i, 1);
+        }
+
+        // Floor / Ceiling collision
+        if (birdY + 14 > canvas.height || birdY - 14 < 0) {
+          gameState = 'GAMEOVER';
+        }
+      }
+    }
+
+    function draw() {
+      // Background Sky Gradient
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#1e1b4b');
+      grad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Stars in background
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      for (let i = 0; i < 25; i++) {
+        const x = (i * 37 + frame * 0.2) % canvas.width;
+        const y = (i * 43) % (canvas.height - 100);
+        ctx.fillRect(x, y, 2, 2);
+      }
+
+      // Draw Pipes
+      pipes.forEach(p => {
+        // Top Pipe
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(p.x, 0, 52, p.top);
+        ctx.fillStyle = '#16a34a';
+        ctx.fillRect(p.x - 3, p.top - 18, 58, 18);
+
+        // Bottom Pipe
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(p.x, canvas.height - p.bottom, 52, p.bottom);
+        ctx.fillStyle = '#16a34a';
+        ctx.fillRect(p.x - 3, canvas.height - p.bottom, 58, 18);
+      });
+
+      // Draw Bird
+      ctx.save();
+      ctx.translate(80, birdY);
+      ctx.rotate(Math.min(Math.PI / 4, Math.max(-Math.PI / 4, birdVelocity * 0.08)));
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(0, 0, 14, 0, Math.PI * 2);
+      ctx.fill();
+      // Eye & Beak
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(5, -4, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(6, -4, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ea580c';
+      ctx.beginPath();
+      ctx.moveTo(10, 0);
+      ctx.lineTo(20, 4);
+      ctx.lineTo(10, 8);
+      ctx.fill();
+      ctx.restore();
+
+      // UI Overlay
+      if (gameState === 'START') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 26px "Segoe UI", Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('FLAPPY BIRD 3D', canvas.width / 2, 220);
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px "Segoe UI", Arial';
+        ctx.fillText('Nhấp chuột hoặc Space để bắt đầu', canvas.width / 2, 270);
+      } else if (gameState === 'PLAYING') {
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 36px "Segoe UI", Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(score, canvas.width / 2, 60);
+      } else if (gameState === 'GAMEOVER') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 32px "Segoe UI", Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER!', canvas.width / 2, 200);
+        ctx.fillStyle = '#fff';
+        ctx.font = '18px "Segoe UI", Arial';
+        ctx.fillText(`Điểm số: ${score}`, canvas.width / 2, 250);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText(`Kỷ lục: ${highScore}`, canvas.width / 2, 285);
+        ctx.fillStyle = '#a5b4fc';
+        ctx.font = '14px "Segoe UI", Arial';
+        ctx.fillText('Nhấp vào màn hình để chơi lại', canvas.width / 2, 340);
+      }
+
+      requestAnimationFrame(() => {
+        update();
+        draw();
+      });
+    }
+
+    draw();
+  </script>
+</body>
+</html>

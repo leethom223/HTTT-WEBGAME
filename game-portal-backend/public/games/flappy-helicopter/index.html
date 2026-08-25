@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Copter Classic Trực Thăng Hang Động</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      width: 520px;
+      padding: 10px 16px;
+      background: #181b26;
+      border: 1px solid #334155;
+      border-radius: 8px 8px 0 0;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+    #copterCanvas {
+      background: #090a0f;
+      border: 2px solid #38bdf8;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+      cursor: pointer;
+    }
+    .guide-text {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <span style="color:#38bdf8" id="distTxt">QUÃNG ĐƯỜNG: 0m</span>
+    <span style="color:#f59e0b" id="bestTxt">KỶ LỤC: 0m</span>
+  </div>
+  <canvas id="copterCanvas" width="520" height="360"></canvas>
+  <div class="guide-text"><b>Giữ chuột trái</b> hoặc <b>giữ phím Space</b> để bay lên • <b>Thả ra</b> để rơi xuống</div>
+
+  <script>
+    const canvas = document.getElementById('copterCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let copterY = 180;
+    let copterV = 0;
+    let isThrusting = false;
+    let distance = 0;
+    let best = localStorage.getItem('copter_best') || 0;
+    let obstacles = [];
+    let terrain = [];
+    let gameOver = false;
+    let frame = 0;
+    document.getElementById('bestTxt').innerText = `KỶ LỤC: ${best}m`;
+
+    function init() {
+      copterY = 180;
+      copterV = 0;
+      distance = 0;
+      obstacles = [];
+      terrain = [];
+      gameOver = false;
+      frame = 0;
+
+      // Init flat cave entrance
+      for (let x = 0; x < canvas.width + 20; x += 10) {
+        terrain.push({ x, top: 40, bottom: 40 });
+      }
+    }
+
+    function handleStart() {
+      if (gameOver) { init(); return; }
+      isThrusting = true;
+    }
+    function handleEnd() { isThrusting = false; }
+
+    window.addEventListener('mousedown', handleStart);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchstart', e => { e.preventDefault(); handleStart(); }, { passive: false });
+    window.addEventListener('touchend', handleEnd);
+    window.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); handleStart(); } });
+    window.addEventListener('keyup', e => { if (e.code === 'Space') handleEnd(); });
+
+    function update() {
+      if (gameOver) return;
+
+      frame++;
+      distance = Math.floor(frame / 4);
+      document.getElementById('distTxt').innerText = `QUÃNG ĐƯỜNG: ${distance}m`;
+      if (distance > best) {
+        best = distance;
+        localStorage.setItem('copter_best', best);
+        document.getElementById('bestTxt').innerText = `KỶ LỤC: ${best}m`;
+      }
+
+      // Physics
+      if (isThrusting) copterV -= 0.45;
+      else copterV += 0.35;
+      copterV = Math.max(-5, Math.min(5, copterV));
+      copterY += copterV;
+
+      // Scroll Terrain
+      terrain.forEach(t => t.x -= 3);
+      if (terrain[0].x < -10) {
+        terrain.shift();
+        const last = terrain[terrain.length - 1];
+        const changeTop = (Math.random() - 0.5) * 16;
+        const changeBot = (Math.random() - 0.5) * 16;
+        const newTop = Math.max(20, Math.min(120, last.top + changeTop));
+        const newBot = Math.max(20, Math.min(120, last.bottom + changeBot));
+        terrain.push({ x: last.x + 10, top: newTop, bottom: newBot });
+      }
+
+      // Spawn Obstacles (Cave Pillars)
+      if (frame % 80 === 0 && distance > 30) {
+        const topH = Math.random() * 80 + 30;
+        obstacles.push({
+          x: canvas.width,
+          y: Math.random() * (canvas.height - 180) + 60,
+          w: 22,
+          h: 60
+        });
+      }
+
+      // Scroll Obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].x -= 3;
+        // Collision with obstacle
+        const o = obstacles[i];
+        if (o.x < 100 && o.x + o.w > 70 && copterY < o.y + o.h && copterY + 16 > o.y) {
+          gameOver = true;
+        }
+        if (o.x < -30) obstacles.splice(i, 1);
+      }
+
+      // Check collision with ceiling / floor
+      const curTerrain = terrain.find(t => t.x >= 70 && t.x <= 100) || terrain[0];
+      if (copterY < curTerrain.top || copterY + 16 > canvas.height - curTerrain.bottom) {
+        gameOver = true;
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = '#090a0f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Cave Ceiling & Floor
+      ctx.fillStyle = '#1e293b';
+      // Ceiling
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      terrain.forEach(t => ctx.lineTo(t.x, t.top));
+      ctx.lineTo(canvas.width, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.stroke();
+
+      // Floor
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height);
+      terrain.forEach(t => ctx.lineTo(t.x, canvas.height - t.bottom));
+      ctx.lineTo(canvas.width, canvas.height);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Draw Obstacles
+      ctx.fillStyle = '#ef4444';
+      ctx.strokeStyle = '#f87171';
+      obstacles.forEach(o => {
+        ctx.fillRect(o.x, o.y, o.w, o.h);
+        ctx.strokeRect(o.x, o.y, o.w, o.h);
+      });
+
+      // Draw Helicopter
+      ctx.save();
+      ctx.translate(80, copterY);
+      ctx.rotate(copterV * 0.05);
+
+      // Body
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(0, 0, 24, 14);
+      // Window
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(14, 2, 8, 6);
+      // Tail
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(-12, 4, 12, 4);
+      ctx.fillRect(-14, 0, 4, 12);
+      // Rotor
+      ctx.fillStyle = '#fff';
+      const rotorW = (frame % 2 === 0) ? 30 : 10;
+      ctx.fillRect(12 - rotorW / 2, -4, rotorW, 2);
+      ctx.fillRect(11, -2, 2, 2);
+      ctx.restore();
+
+      // GameOver Screen
+      if (gameOver) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 28px "Segoe UI"';
+        ctx.textAlign = 'center';
+        ctx.fillText('TRỰC THĂNG ĐÃ VA CHẠM!', canvas.width / 2, 150);
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px "Segoe UI"';
+        ctx.fillText(`Quãng đường bay: ${distance} mét`, canvas.width / 2, 190);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText('Nhấp chuột để cất cánh lại 🚁', canvas.width / 2, 230);
+      }
+
+      update();
+      requestAnimationFrame(draw);
+    }
+
+    init();
+    draw();
+  </script>
+</body>
+</html>

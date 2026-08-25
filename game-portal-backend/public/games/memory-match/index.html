@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Memory Match Lật Thẻ Trí Nhớ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 10px;
+    }
+    .memory-container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #181b26;
+      border: 1px solid #334155;
+      padding: 10px 16px;
+      border-radius: 8px;
+    }
+    .stat { font-size: 1rem; font-weight: bold; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .card {
+      height: 90px;
+      background: #232738;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      transform-style: preserve-3d;
+    }
+    .card:hover { border-color: #6366f1; transform: scale(1.03); }
+    .card.flipped { background: #312e81; border-color: #a855f7; transform: rotateY(180deg); }
+    .card.matched { background: #064e3b; border-color: #10b981; cursor: default; }
+    .btn-reset {
+      padding: 10px;
+      background: #6366f1;
+      border: none;
+      color: #fff;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-reset:hover { background: #4f46e5; }
+  </style>
+</head>
+<body>
+  <div class="memory-container">
+    <div class="header-bar">
+      <span class="stat" style="color:#38bdf8" id="movesTxt">Lượt lật: 0</span>
+      <span class="stat" style="color:#f59e0b" id="timeTxt">Thời gian: 0s</span>
+      <button class="btn-reset" id="btnReset">Chơi lại 🔄</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script>
+    const emojis = ['🎮', '🕹️', '👾', '🚀', '⭐', '💎', '🔥', '🏆'];
+    let cards = [];
+    let flippedCards = [];
+    let moves = 0;
+    let timer = 0;
+    let timerInterval = null;
+    let lockBoard = false;
+    let matchedPairs = 0;
+
+    function init() {
+      const deck = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      cards = [];
+      flippedCards = [];
+      moves = 0;
+      timer = 0;
+      matchedPairs = 0;
+      lockBoard = false;
+      clearInterval(timerInterval);
+
+      document.getElementById('movesTxt').innerText = 'Lượt lật: 0';
+      document.getElementById('timeTxt').innerText = 'Thời gian: 0s';
+
+      timerInterval = setInterval(() => {
+        timer++;
+        document.getElementById('timeTxt').innerText = `Thời gian: ${timer}s`;
+      }, 1000);
+
+      deck.forEach((emoji, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.emoji = emoji;
+        card.innerText = '❓';
+        card.onclick = () => flipCard(card);
+        grid.appendChild(card);
+        cards.push(card);
+      });
+    }
+
+    function flipCard(card) {
+      if (lockBoard || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+      card.classList.add('flipped');
+      card.innerText = card.dataset.emoji;
+      flippedCards.push(card);
+
+      if (flippedCards.length === 2) {
+        moves++;
+        document.getElementById('movesTxt').innerText = `Lượt lật: ${moves}`;
+        checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      const [c1, c2] = flippedCards;
+      if (c1.dataset.emoji === c2.dataset.emoji) {
+        c1.classList.add('matched');
+        c2.classList.add('matched');
+        matchedPairs++;
+        flippedCards = [];
+        if (matchedPairs === emojis.length) {
+          clearInterval(timerInterval);
+          setTimeout(() => {
+            alert(`🎉 CHÚC MỪNG BẠN ĐÃ THẮNG!\nThời gian: ${timer} giây\nSố lượt lật: ${moves}`);
+          }, 300);
+        }
+      } else {
+        lockBoard = true;
+        setTimeout(() => {
+          c1.classList.remove('flipped');
+          c2.classList.remove('flipped');
+          c1.innerText = '❓';
+          c2.innerText = '❓';
+          flippedCards = [];
+          lockBoard = false;
+        }, 900);
+      }
+    }
+
+    document.getElementById('btnReset').onclick = init;
+    init();
+  </script>
+</body>
+</html>

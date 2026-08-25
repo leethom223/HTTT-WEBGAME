@@ -1,0 +1,46 @@
+﻿<svg width="600" height="520" viewBox="0 0 600 520" xmlns="http://www.w3.org/2000/svg" style="background:#ffffff; font-family:'Segoe UI', Arial, sans-serif;">
+  <defs>
+    <marker id="arrAct2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#6366f1"/>
+    </marker>
+    <filter id="shAct2" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  <text x="300" y="30" font-size="18" font-weight="bold" fill="#1e1b4b" text-anchor="middle">HÌNH 3.4: SƠ ĐỒ HOẠT ĐỘNG - CHƠI GAME &amp; GHI LỊCH SỬ</text>
+  <!-- Start -->
+  <circle cx="300" cy="65" r="14" fill="#0f172a"/>
+  <!-- Action 1 -->
+  <rect x="180" y="110" width="240" height="40" rx="20" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5" filter="url(#shAct2)"/>
+  <text x="300" y="135" font-size="12" font-weight="bold" fill="#4338ca" text-anchor="middle">Chọn Game &amp; Chuyển /game/:slug</text>
+  <!-- Action 2 -->
+  <rect x="180" y="180" width="240" height="40" rx="20" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5" filter="url(#shAct2)"/>
+  <text x="300" y="205" font-size="12" font-weight="bold" fill="#4338ca" text-anchor="middle">Gọi API lấy thông tin &amp; link game</text>
+  <!-- Action 3 -->
+  <rect x="180" y="250" width="240" height="40" rx="20" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5" filter="url(#shAct2)"/>
+  <text x="300" y="275" font-size="12" font-weight="bold" fill="#4338ca" text-anchor="middle">Server tăng play_count + 1</text>
+  <!-- Decision -->
+  <polygon points="300,320 360,355 300,390 240,355" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5" filter="url(#shAct2)"/>
+  <text x="300" y="359" font-size="11" font-weight="bold" fill="#92400e" text-anchor="middle">Đã Login?</text>
+  <!-- Log history action -->
+  <rect x="420" y="335" width="160" height="40" rx="8" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="500" y="360" font-size="11" font-weight="bold" fill="#6b21a8" text-anchor="middle">Lưu bảng play_history</text>
+  <!-- Action 4: Load Game -->
+  <rect x="180" y="420" width="240" height="40" rx="20" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5" filter="url(#shAct2)"/>
+  <text x="300" y="445" font-size="12" font-weight="bold" fill="#166534" text-anchor="middle">Khởi tạo GamePlayer &amp; Chơi game</text>
+  <!-- End -->
+  <circle cx="300" cy="495" r="14" fill="none" stroke="#0f172a" stroke-width="2"/>
+  <circle cx="300" cy="495" r="8" fill="#0f172a"/>
+  <!-- Connectors -->
+  <line x1="300" y1="79" x2="300" y2="110" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrAct2)"/>
+  <line x1="300" y1="150" x2="300" y2="180" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrAct2)"/>
+  <line x1="300" y1="220" x2="300" y2="250" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrAct2)"/>
+  <line x1="300" y1="290" x2="300" y2="320" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrAct2)"/>
+  <line x1="360" y1="355" x2="420" y2="355" stroke="#a855f7" stroke-width="1.5" marker-end="url(#arrAct2)"/>
+  <text x="380" y="348" font-size="10" fill="#a855f7">[Có]</text>
+  <line x1="500" y1="375" x2="500" y2="440" stroke="#a855f7" stroke-width="1.5"/>
+  <line x1="500" y1="440" x2="420" y2="440" stroke="#a855f7" stroke-width="1.5" marker-end="url(#arrAct2)"/>
+  <line x1="300" y1="390" x2="300" y2="420" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrAct2)"/>
+  <text x="310" y="405" font-size="10" fill="#22c55e">[Không]</text>
+  <line x1="300" y1="460" x2="300" y2="481" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrAct2)"/>
+</svg>

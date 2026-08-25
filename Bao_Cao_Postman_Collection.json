@@ -1,0 +1,244 @@
+{
+  "info": {
+    "_postman_id": "game-portal-api-collection",
+    "name": "Game Portal API Collection - Full Phase 3",
+    "description": "Bộ sưu tập Postman hoàn chỉnh cho Đồ Án WebGame (Laravel 11 RESTful API + Sanctum Auth)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api"
+    },
+    {
+      "key": "auth_token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Public Endpoints",
+      "item": [
+        {
+          "name": "Ping Service",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ping"
+          }
+        },
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/categories"
+          }
+        },
+        {
+          "name": "Get Category By Slug",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/categories/tri-tue"
+          }
+        },
+        {
+          "name": "Get All Games (Filter & Search)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/games?search=&category=&badge=&sort=popular"
+          }
+        },
+        {
+          "name": "Get Featured Games (Hot / Banner)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/games/featured"
+          }
+        },
+        {
+          "name": "Get Game Detail (Play Count +1)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/games/2048-classic"
+          }
+        },
+        {
+          "name": "Get Game Comments",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/games/1/comments"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication API",
+      "item": [
+        {
+          "name": "Register Member",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nguyen Van A\",\n  \"username\": \"nguyenvana\",\n  \"email\": \"vana@gmail.com\",\n  \"password\": \"123456\",\n  \"password_confirmation\": \"123456\"\n}"
+            },
+            "url": "{{base_url}}/register"
+          }
+        },
+        {
+          "name": "Login (Admin / Member)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@gameportal.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": "{{base_url}}/login"
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{auth_token}}" }],
+            "url": "{{base_url}}/me"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{auth_token}}" }],
+            "url": "{{base_url}}/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Member Interactions",
+      "item": [
+        {
+          "name": "Post Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Game rất hay và cuốn hút!\"\n}"
+            },
+            "url": "{{base_url}}/games/1/comments"
+          }
+        },
+        {
+          "name": "Rate Game (1-5 stars)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 5\n}"
+            },
+            "url": "{{base_url}}/games/1/ratings"
+          }
+        },
+        {
+          "name": "Toggle Favorite Game",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{auth_token}}" }],
+            "url": "{{base_url}}/favorites/1/toggle"
+          }
+        },
+        {
+          "name": "Get My Favorite Games",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{auth_token}}" }],
+            "url": "{{base_url}}/favorites"
+          }
+        },
+        {
+          "name": "Record Play History",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{auth_token}}" }],
+            "url": "{{base_url}}/history/1"
+          }
+        },
+        {
+          "name": "Get My Play History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{auth_token}}" }],
+            "url": "{{base_url}}/history"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Admin Management (Requires role='admin')",
+      "item": [
+        {
+          "name": "Create New Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chiến thuật\",\n  \"slug\": \"chien-thuat\",\n  \"icon\": \"♟️\"\n}"
+            },
+            "url": "{{base_url}}/admin/categories"
+          }
+        },
+        {
+          "name": "Create New Game",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Flappy Bird HTML5\",\n  \"slug\": \"flappy-bird\",\n  \"thumbnail\": \"https://images.unsplash.com/photo-1550745165-9bc0b252726f\",\n  \"play_url\": \"https://flappybird.io/\",\n  \"description\": \"Trò chơi chim vỗ cánh vượt chướng ngại vật.\",\n  \"controls_guide\": \"Chạm hoặc Space\",\n  \"badge\": \"HOT\",\n  \"category_ids\": [1, 2]\n}"
+            },
+            "url": "{{base_url}}/admin/games"
+          }
+        },
+        {
+          "name": "Update Game",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"2048 Remastered\",\n  \"badge\": \"HOT\"\n}"
+            },
+            "url": "{{base_url}}/admin/games/1"
+          }
+        },
+        {
+          "name": "Delete Game",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{auth_token}}" }],
+            "url": "{{base_url}}/admin/games/10"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Tetris Classic Xếp Gạch Cổ Điển</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 10px;
+    }
+    .tetris-wrapper {
+      display: flex;
+      gap: 20px;
+      background: #181b26;
+      border: 2px solid #6366f1;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+    }
+    #tetrisCanvas {
+      background: #090a0f;
+      border: 2px solid #334155;
+      border-radius: 6px;
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 140px;
+    }
+    .panel-box {
+      background: #232738;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .panel-label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .panel-val {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #38bdf8;
+    }
+    #nextCanvas {
+      background: #090a0f;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+    .btn-action {
+      width: 100%;
+      padding: 10px;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    .btn-action:hover { background: #4f46e5; }
+    .controls-guide {
+      margin-top: 15px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      text-align: center;
+    }
+    .controls-guide b { color: #cbd5e1; }
+  </style>
+</head>
+<body>
+  <div class="tetris-wrapper">
+    <canvas id="tetrisCanvas" width="240" height="400"></canvas>
+    
+    <div class="sidebar">
+      <div>
+        <div class="panel-box">
+          <div class="panel-label">ĐIỂM SỐ</div>
+          <div class="panel-val" id="score">0</div>
+        </div>
+        <div class="panel-box">
+          <div class="panel-label">HÀNG ĐÃ ĂN</div>
+          <div class="panel-val" id="lines" style="color:#22c55e">0</div>
+        </div>
+        <div class="panel-box">
+          <div class="panel-label">CẤP ĐỘ</div>
+          <div class="panel-val" id="level" style="color:#f59e0b">1</div>
+        </div>
+        <div class="panel-box">
+          <div class="panel-label">KHỐI TIẾP THEO</div>
+          <canvas id="nextCanvas" width="80" height="80"></canvas>
+        </div>
+      </div>
+
+      <div>
+        <button class="btn-action" id="btnRestart">Chơi lại 🔄</button>
+        <button class="btn-action" id="btnPause" style="background:#334155; margin-top:8px">Tạm dừng ⏸️</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-guide">
+    <b>← / → (A / D)</b>: Sang trái/phải • <b>↑ (W)</b>: Xoay khối • <b>↓ (S)</b>: Rơi nhanh • <b>Space</b>: Thả rơi ngay
+  </div>
+
+  <script>
+    const canvas = document.getElementById('tetrisCanvas');
+    const ctx = canvas.getContext('2d');
+    const nextCanvas = document.getElementById('nextCanvas');
+    const nextCtx = nextCanvas.getContext('2d');
+
+    const COLS = 10;
+    const ROWS = 20;
+    const BLOCK_SIZE = 20;
+    ctx.scale(1.2, 1); // 240 / 10 = 24, 400 / 20 = 20
+
+    const SHAPES = [
+      [],
+      [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]], // I (Cyan)
+      [[2, 0, 0], [2, 2, 2], [0, 0, 0]],                         // J (Blue)
+      [[0, 0, 3], [3, 3, 3], [0, 0, 0]],                         // L (Orange)
+      [[4, 4], [4, 4]],                                         // O (Yellow)
+      [[0, 5, 5], [5, 5, 0], [0, 0, 0]],                         // S (Green)
+      [[0, 6, 0], [6, 6, 6], [0, 0, 0]],                         // T (Purple)
+      [[7, 7, 0], [0, 7, 7], [0, 0, 0]]                          // Z (Red)
+    ];
+
+    const COLORS = [
+      'none',
+      '#06b6d4', // I
+      '#3b82f6', // J
+      '#f97316', // L
+      '#eab308', // O
+      '#22c55e', // S
+      '#a855f7', // T
+      '#ef4444'  // Z
+    ];
+
+    let grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+    let score = 0;
+    let lines = 0;
+    let level = 1;
+    let isPaused = false;
+    let gameOver = false;
+    let dropCounter = 0;
+    let dropInterval = 800;
+    let lastTime = 0;
+
+    let piece = null;
+    let nextPiece = null;
+
+    function createPiece(type) {
+      return {
+        matrix: SHAPES[type],
+        x: Math.floor(COLS / 2) - Math.ceil(SHAPES[type][0].length / 2),
+        y: 0,
+        type: type
+      };
+    }
+
+    function getRandomPiece() {
+      const type = Math.floor(Math.random() * 7) + 1;
+      return createPiece(type);
+    }
+
+    function reset() {
+      grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+      score = 0;
+      lines = 0;
+      level = 1;
+      gameOver = false;
+      isPaused = false;
+      dropInterval = 800;
+      updateStats();
+      piece = getRandomPiece();
+      nextPiece = getRandomPiece();
+      drawNext();
+    }
+
+    function collide(grid, piece) {
+      const [m, o] = [piece.matrix, { x: piece.x, y: piece.y }];
+      for (let r = 0; r < m.length; r++) {
+        for (let c = 0; c < m[r].length; c++) {
+          if (m[r][c] !== 0) {
+            const gy = r + o.y;
+            const gx = c + o.x;
+            if (gx < 0 || gx >= COLS || gy >= ROWS || (gy >= 0 && grid[gy][gx] !== 0)) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    function merge(grid, piece) {
+      piece.matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value !== 0) {
+            grid[y + piece.y][x + piece.x] = value;
+          }
+        });
+      });
+    }
+
+    function rotate(matrix) {
+      return matrix[0].map((_, i) => matrix.map(row => row[i]).reverse());
+    }
+
+    function playerRotate() {
+      const pos = piece.x;
+      let offset = 1;
+      piece.matrix = rotate(piece.matrix);
+      while (collide(grid, piece)) {
+        piece.x += offset;
+        offset = -(offset + (offset > 0 ? 1 : -1));
+        if (offset > piece.matrix[0].length) {
+          piece.matrix = rotate(rotate(rotate(piece.matrix)));
+          piece.x = pos;
+          return;
+        }
+      }
+    }
+
+    function playerDrop() {
+      piece.y++;
+      if (collide(grid, piece)) {
+        piece.y--;
+        merge(grid, piece);
+        clearLines();
+        piece = nextPiece;
+        nextPiece = getRandomPiece();
+        drawNext();
+        if (collide(grid, piece)) {
+          gameOver = true;
+        }
+      }
+      dropCounter = 0;
+    }
+
+    function playerHardDrop() {
+      while (!collide(grid, piece)) {
+        piece.y++;
+      }
+      piece.y--;
+      playerDrop();
+    }
+
+    function clearLines() {
+      let rowCount = 0;
+      outer: for (let y = ROWS - 1; y >= 0; y--) {
+        for (let x = 0; x < COLS; x++) {
+          if (grid[y][x] === 0) continue outer;
+        }
+        const row = grid.splice(y, 1)[0].fill(0);
+        grid.unshift(row);
+        rowCount++;
+        y++;
+      }
+      if (rowCount > 0) {
+        const lineScores = [0, 40, 100, 300, 1200];
+        score += lineScores[rowCount] * level;
+        lines += rowCount;
+        level = Math.floor(lines / 10) + 1;
+        dropInterval = Math.max(100, 800 - (level - 1) * 70);
+        updateStats();
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('score').innerText = score;
+      document.getElementById('lines').innerText = lines;
+      document.getElementById('level').innerText = level;
+    }
+
+    function drawMatrix(matrix, offset, context) {
+      matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value !== 0) {
+            context.fillStyle = COLORS[value];
+            context.fillRect((x + offset.x) * 20, (y + offset.y) * 20, 19, 19);
+            context.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            context.fillRect((x + offset.x) * 20, (y + offset.y) * 20, 19, 3);
+          }
+        });
+      });
+    }
+
+    function draw() {
+      ctx.fillStyle = '#090a0f';
+      ctx.fillRect(0, 0, 200, 400);
+
+      // Draw Grid
+      grid.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value !== 0) {
+            ctx.fillStyle = COLORS[value];
+            ctx.fillRect(x * 20, y * 20, 19, 19);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillRect(x * 20, y * 20, 19, 3);
+          }
+        });
+      });
+
+      // Draw active piece
+      if (piece) drawMatrix(piece.matrix, { x: piece.x, y: piece.y }, ctx);
+
+      // Draw GameOver
+      if (gameOver) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, 200, 400);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 20px "Segoe UI"';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER', 100, 180);
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px "Segoe UI"';
+        ctx.fillText('Nhấn Chơi Lại', 100, 210);
+      }
+    }
+
+    function drawNext() {
+      nextCtx.fillStyle = '#090a0f';
+      nextCtx.fillRect(0, 0, 80, 80);
+      if (nextPiece) {
+        const ox = (4 - nextPiece.matrix[0].length) / 2;
+        const oy = (4 - nextPiece.matrix.length) / 2;
+        drawMatrix(nextPiece.matrix, { x: ox, y: oy }, nextCtx);
+      }
+    }
+
+    function update(time = 0) {
+      const deltaTime = time - lastTime;
+      lastTime = time;
+
+      if (!isPaused && !gameOver) {
+        dropCounter += deltaTime;
+        if (dropCounter > dropInterval) {
+          playerDrop();
+        }
+      }
+
+      draw();
+      requestAnimationFrame(update);
+    }
+
+    window.addEventListener('keydown', e => {
+      if (gameOver) return;
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        piece.x--;
+        if (collide(grid, piece)) piece.x++;
+      } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        piece.x++;
+        if (collide(grid, piece)) piece.x--;
+      } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        playerDrop();
+      } else if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+        playerRotate();
+      } else if (e.code === 'Space') {
+        e.preventDefault();
+        playerHardDrop();
+      }
+    });
+
+    document.getElementById('btnRestart').onclick = reset;
+    document.getElementById('btnPause').onclick = () => {
+      isPaused = !isPaused;
+      document.getElementById('btnPause').innerText = isPaused ? 'Tiếp tục ▶️' : 'Tạm dừng ⏸️';
+    };
+
+    reset();
+    update();
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment files
+.env
+.env.backup
+.env.production
+
+# Build artifacts & caches
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Laravel Storage & Logs
+game-portal-backend/storage/*.key
+game-portal-backend/storage/framework/cache/*
+game-portal-backend/storage/framework/sessions/*
+game-portal-backend/storage/framework/views/*
+game-portal-backend/storage/logs/*
+!game-portal-backend/storage/framework/.gitignore
+!game-portal-backend/storage/logs/.gitignore
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.user
+*.useroscore

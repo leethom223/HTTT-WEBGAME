@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Tower Building 3D Canvas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #towerCanvas {
+      background: #181b26;
+      border: 2px solid #a855f7;
+      border-radius: 12px;
+      box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
+      cursor: pointer;
+    }
+    .guide-box {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="towerCanvas" width="400" height="560"></canvas>
+  <div class="guide-box">Bấm <b>Phím Space</b> hoặc <b>Chạm màn hình</b> để thả khối nhà 🏢</div>
+
+  <script>
+    const canvas = document.getElementById('towerCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let blocks = [];
+    let currentBlock = null;
+    let blockSpeed = 3.5;
+    let blockDir = 1;
+    let score = 0;
+    let best = localStorage.getItem('tower_best') || 0;
+    let gameState = 'PLAYING'; // 'PLAYING' | 'GAMEOVER'
+    const blockHeight = 35;
+
+    function init() {
+      blocks = [
+        { x: 100, y: canvas.height - 45, width: 200, color: '#6366f1' }
+      ];
+      score = 0;
+      blockSpeed = 3.5;
+      gameState = 'PLAYING';
+      spawnBlock();
+    }
+
+    function spawnBlock() {
+      const lastBlock = blocks[blocks.length - 1];
+      const colors = ['#ec4899', '#a855f7', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+      const color = colors[score % colors.length];
+      currentBlock = {
+        x: 0,
+        y: lastBlock.y - blockHeight - 2,
+        width: lastBlock.width,
+        color: color
+      };
+      blockDir = 1;
+    }
+
+    function drop() {
+      if (gameState === 'GAMEOVER') {
+        init();
+        return;
+      }
+
+      if (!currentBlock) return;
+
+      const lastBlock = blocks[blocks.length - 1];
+      const diff = currentBlock.x - lastBlock.x;
+
+      if (Math.abs(diff) < 4) {
+        // Perfect Combo Snap
+        currentBlock.x = lastBlock.x;
+        score += 2;
+      } else if (diff > 0 && diff < lastBlock.width) {
+        // Cut right overhang
+        currentBlock.width -= diff;
+        score += 1;
+      } else if (diff < 0 && Math.abs(diff) < lastBlock.width) {
+        // Cut left overhang
+        currentBlock.x = lastBlock.x;
+        currentBlock.width += diff;
+        score += 1;
+      } else {
+        // Missed completely -> Game Over
+        gameState = 'GAMEOVER';
+        if (score > best) {
+          best = score;
+          localStorage.setItem('tower_best', best);
+        }
+        return;
+      }
+
+      blocks.push(currentBlock);
+      blockSpeed = Math.min(7, blockSpeed + 0.15);
+
+      // Camera Scroll down if building high
+      if (blocks.length > 8) {
+        for (let b of blocks) b.y += blockHeight;
+      }
+
+      spawnBlock();
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'Space' || e.code === 'ArrowDown') {
+        e.preventDefault();
+        drop();
+      }
+    });
+    canvas.addEventListener('pointerdown', drop);
+
+    function update() {
+      if (gameState === 'PLAYING' && currentBlock) {
+        currentBlock.x += blockSpeed * blockDir;
+        if (currentBlock.x + currentBlock.width > canvas.width) {
+          blockDir = -1;
+        } else if (currentBlock.x < 0) {
+          blockDir = 1;
+        }
+      }
+    }
+
+    function draw() {
+      // Sky Background
+      ctx.fillStyle = '#0f111a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Base line
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(0, canvas.height - 8, canvas.width, 8);
+
+      // Draw Stacked Blocks
+      for (let b of blocks) {
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, b.y, b.width, blockHeight);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillRect(b.x, b.y, b.width, 6);
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.strokeRect(b.x, b.y, b.width, blockHeight);
+      }
+
+      // Draw Moving Block
+      if (gameState === 'PLAYING' && currentBlock) {
+        ctx.fillStyle = currentBlock.color;
+        ctx.fillRect(currentBlock.x, currentBlock.y, currentBlock.width, blockHeight);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillRect(currentBlock.x, currentBlock.y, currentBlock.width, 6);
+      }
+
+      // Score HUD
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 28px "Segoe UI", Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Tầng: ${score}`, canvas.width / 2, 50);
+
+      // Game Over Screen
+      if (gameState === 'GAMEOVER') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 30px "Segoe UI", Arial';
+        ctx.fillText('TOÀ NHÀ BỊ ĐỔ!', canvas.width / 2, 220);
+        ctx.fillStyle = '#fff';
+        ctx.font = '18px "Segoe UI", Arial';
+        ctx.fillText(`Số tầng xây được: ${score}`, canvas.width / 2, 270);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText(`Kỷ lục cao nhất: ${best}`, canvas.width / 2, 305);
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '14px "Segoe UI", Arial';
+        ctx.fillText('Nhấn vào màn hình để xây lại 🔄', canvas.width / 2, 360);
+      }
+
+      requestAnimationFrame(() => {
+        update();
+        draw();
+      });
+    }
+
+    init();
+    draw();
+  </script>
+</body>
+</html>
