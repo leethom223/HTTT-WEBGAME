@@ -1,5 +1,5 @@
 #!/bin/sh
-PORT_NUM=${PORT:-8000}
+PORT_NUM="${PORT:-10000}"
 
 echo "=== STARTING LARAVEL PRODUCTION CONTAINER ON PORT $PORT_NUM ==="
 
@@ -12,9 +12,13 @@ fi
 touch /app/database/database.sqlite 2>/dev/null || true
 
 # Run database migrations and seeders
-php artisan migrate --force
-php artisan db:seed --force
+php artisan migrate --force || echo "Migration warning: check DB credentials"
+php artisan db:seed --force || echo "Seeding warning: skipped"
 
-# Start Laravel Server
-echo "Laravel API is now LIVE on port $PORT_NUM!"
-exec php artisan serve --host=0.0.0.0 --port=$PORT_NUM
+# Clear caches for fresh boot
+php artisan config:clear
+php artisan route:clear
+
+# Start PHP Built-in Server with public directory routing
+echo "Laravel API is now serving on 0.0.0.0:$PORT_NUM..."
+exec php -S 0.0.0.0:$PORT_NUM -t public
