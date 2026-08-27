@@ -32,11 +32,15 @@ export default function Header() {
     <header className="main-header">
       <div className="header-top">
         <div className="header-container">
-          {/* Logo */}
+          {/* Logo 36GameS */}
           <Link to="/" className="logo-brand">
-            <span className="logo-icon">🎮</span>
+            <div className="brand-badge-36">36</div>
             <div className="logo-text-group">
-              <span className="logo-title">GAMEX PORTAL</span>
+              <span className="logo-title">
+                <span style={{ color: '#00f2fe' }}>36</span>
+                <span style={{ color: '#ffffff' }}>Game</span>
+                <span style={{ color: '#ec4899' }}>S</span>
+              </span>
               <span className="logo-subtitle">Cổng Game Trực Tuyến</span>
             </div>
           </Link>

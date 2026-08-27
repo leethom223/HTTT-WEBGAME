@@ -42,6 +42,28 @@
   text-decoration: none;
 }
 
+.brand-badge-36 {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #00f2fe, #4facfe, #ec4899);
+  color: #090a16;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Impact', 'Arial Black', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+  box-shadow: 0 0 16px rgba(0, 242, 254, 0.4);
+  transform: rotate(-4deg);
+  transition: transform 0.2s ease;
+  user-select: none;
+}
+
+.logo-brand:hover .brand-badge-36 {
+  transform: rotate(0deg) scale(1.08);
+}
+
 .logo-icon {
   font-size: 2rem;
   filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));
@@ -53,12 +75,9 @@
 }
 
 .logo-title {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 900;
   letter-spacing: 0.5px;
-  background: linear-gradient(135deg, #a855f7, #6366f1, #38bdf8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 .logo-subtitle {

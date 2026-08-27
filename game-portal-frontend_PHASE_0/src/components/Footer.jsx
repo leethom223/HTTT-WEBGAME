@@ -8,11 +8,15 @@ export default function Footer() {
         <div className="footer-container">
           <div className="footer-col brand-col">
             <div className="footer-brand">
-              <span className="footer-logo-icon">🎮</span>
-              <span className="footer-logo-text">GAMEX PORTAL</span>
+              <span className="brand-badge-36" style={{ width: '32px', height: '32px', fontSize: '15px' }}>36</span>
+              <span className="footer-logo-text">
+                <span style={{ color: '#00f2fe' }}>36</span>
+                <span style={{ color: '#ffffff' }}>Game</span>
+                <span style={{ color: '#ec4899' }}>S</span>
+              </span>
             </div>
             <p className="footer-desc">
-              Cổng trò chơi trực tuyến đa nền tảng hiện đại, hỗ trợ chuẩn HTML5 và Unity WebGL. Chơi mượt mà trên mọi trình duyệt không cần cài đặt.
+              Cổng trò chơi trực tuyến đa nền tảng 36GameS hiện đại, hỗ trợ chuẩn HTML5 và WebGL. Chơi mượt mà trên mọi trình duyệt điện thoại và máy tính không cần cài đặt.
             </p>
             <div className="tech-stack-badges">
               <span className="tech-badge">React 19</span>
@@ -45,9 +49,9 @@ export default function Footer() {
           <div className="footer-col">
             <h4 className="footer-heading">Thông tin Đồ án</h4>
             <ul className="footer-info">
+              <li><strong>Tên hệ thống:</strong> 36GameS Portal</li>
               <li><strong>Đồ án:</strong> Hệ Thống Thông Tin WebGame</li>
-              <li><strong>Mô hình:</strong> Single Page Application + REST API</li>
-              <li><strong>Kiến trúc:</strong> 3-Tier Architecture</li>
+              <li><strong>Kiến trúc:</strong> 3-Tier Architecture (SPA + API)</li>
               <li><strong>Trạng thái:</strong> ✅ Sẵn sàng hoạt động</li>
             </ul>
           </div>
@@ -56,7 +60,7 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <div className="footer-container">
-          <p>© 2026 GameX Portal. Thiết kế &amp; Phát triển phục vụ Đồ Án Chuyên Ngành Hệ Thống Thông Tin.</p>
+          <p>© 2026 36GameS Portal. Thiết kế &amp; Phát triển phục vụ Đồ Án Chuyên Ngành Hệ Thống Thông Tin.</p>
         </div>
       </div>
     </footer>

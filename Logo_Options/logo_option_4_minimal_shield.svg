@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 130" width="100%" height="100%">
+  <defs>
+    <linearGradient id="minGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="500" height="130" rx="16" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Icon: Modern Shield with Interlocking '36' and 'Play' triangle -->
+  <g transform="translate(28, 20)">
+    <!-- Sleek Tech Shield -->
+    <path d="M42,6 L78,20 C78,58 42,82 42,88 C42,82 6,58 6,20 Z" fill="url(#minGrad)"/>
+    
+    <!-- Inner Dark Cutout -->
+    <path d="M42,14 L70,26 C70,54 42,74 42,78 C42,74 14,54 14,26 Z" fill="#0f172a"/>
+    
+    <!-- Play Symbol & Number 36 -->
+    <polygon points="36,36 36,56 54,46" fill="#38bdf8"/>
+    <text x="42" y="70" fill="#ffffff" font-family="'Segoe UI', 'Arial Black', sans-serif" font-size="13" font-weight="900" text-anchor="middle">36</text>
+  </g>
+
+  <!-- Typography -->
+  <g transform="translate(130, 25)">
+    <text x="0" y="52" font-family="'Inter', 'Segoe UI', sans-serif" font-size="44" font-weight="900" letter-spacing="1">
+      <tspan fill="#6366f1">36</tspan>
+      <tspan fill="#f8fafc">GAMES</tspan>
+    </text>
+
+    <!-- Sleek Badge -->
+    <rect x="0" y="64" width="80" height="18" rx="4" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+    <text x="40" y="77" fill="#38bdf8" font-family="'Segoe UI', sans-serif" font-size="10" font-weight="bold" text-anchor="middle" letter-spacing="1">OFFICIAL</text>
+    
+    <text x="92" y="77" fill="#64748b" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="600" letter-spacing="1">
+      Web Gaming Platform
+    </text>
+  </g>
+</svg>
