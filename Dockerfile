@@ -1,10 +1,11 @@
 FROM php:8.3-cli-alpine
 
-# Install system dependencies & PHP extensions
+# Install system dependencies, zip tools & PHP extensions
 RUN apk add --no-cache \
     curl \
     git \
     unzip \
+    zip \
     libpng-dev \
     libxml2-dev \
     libzip-dev \
@@ -14,15 +15,25 @@ RUN apk add --no-cache \
     && docker-php-ext-install pdo pdo_mysql mbstring bcmath gd zip
 
 # Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
+
+# Set Composer environment flags
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_NO_INTERACTION=1
+
+# Copy composer files first for optimal caching
+COPY game-portal-backend/composer.json game-portal-backend/composer.lock* ./
+
+# Install dependencies reliably without scripts
+RUN composer install --no-dev --prefer-dist --no-scripts --no-progress --optimize-autoloader
 
 # Copy application files
 COPY game-portal-backend/ .
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Re-run autoloader with full code
+RUN composer dump-autoload --optimize --no-scripts
 
 # Copy link_game directory into public/games
 COPY link_game/ public/games/

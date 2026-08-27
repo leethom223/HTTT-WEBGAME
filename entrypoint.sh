@@ -8,6 +8,9 @@ if [ -z "$APP_KEY" ]; then
     php artisan key:generate --force
 fi
 
+# Discover packages
+php artisan package:discover --ansi 2>/dev/null || true
+
 # Ensure SQLite file exists if using sqlite
 touch /app/database/database.sqlite 2>/dev/null || true
 
