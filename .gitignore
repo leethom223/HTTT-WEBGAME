@@ -27,8 +27,7 @@ game-portal-backend/storage/logs/*
 # IDE & OS files
 .DS_Store
 Thumbs.db
-.idea/
-.vscode/
-*.suo
-*.user
-*.useroscore
+# Cloudflared Binaries & source
+cloudflared.exe
+cloudflared-master/
+*.exe
