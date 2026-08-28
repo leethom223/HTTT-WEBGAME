@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Space Invaders Retro 1978</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      width: 480px;
+      padding: 10px 16px;
+      background: #181b26;
+      border: 1px solid #334155;
+      border-radius: 8px 8px 0 0;
+      font-size: 0.95rem;
+      font-weight: bold;
+    }
+    #gameCanvas {
+      background: #05060a;
+      border: 2px solid #22c55e;
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 0 25px rgba(34, 197, 94, 0.4);
+    }
+    .guide-text {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <span style="color:#22c55e" id="scoreTxt">ĐIỂM: 0</span>
+    <span style="color:#f59e0b" id="waveTxt">ĐỢT TẤN CÔNG: 1</span>
+    <span style="color:#ef4444" id="livesTxt">TÀU: 🚀🚀🚀</span>
+  </div>
+  <canvas id="gameCanvas" width="480" height="520"></canvas>
+  <div class="guide-text">Dùng phím <b>← / → (A / D)</b> để di chuyển phi thuyền • <b>Space</b> để bắn Laser</div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let score = 0;
+    let wave = 1;
+    let lives = 3;
+    let gameOver = false;
+
+    // Player Ship
+    const player = {
+      x: canvas.width / 2 - 18,
+      y: canvas.height - 45,
+      width: 36,
+      height: 20,
+      speed: 6,
+      dx: 0
+    };
+
+    let bullets = [];
+    let enemyBullets = [];
+    let enemies = [];
+    let enemyDirection = 1;
+    let enemyStepDown = false;
+    let enemySpeed = 1.0;
+    let enemyFireTimer = 0;
+
+    function initEnemies() {
+      enemies = [];
+      const rows = 4;
+      const cols = 8;
+      const alienColors = ['#ef4444', '#ec4899', '#3b82f6', '#22c55e'];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          enemies.push({
+            x: 40 + c * 48,
+            y: 40 + r * 34,
+            width: 30,
+            height: 20,
+            color: alienColors[r % alienColors.length],
+            alive: true
+          });
+        }
+      }
+      enemySpeed = 1.0 + wave * 0.3;
+    }
+
+    function fireBullet() {
+      if (bullets.length < 3) {
+        bullets.push({
+          x: player.x + player.width / 2 - 2,
+          y: player.y,
+          width: 4,
+          height: 12,
+          speed: 8
+        });
+      }
+    }
+
+    window.addEventListener('keydown', e => {
+      if (gameOver) {
+        if (e.code === 'Space') {
+          score = 0; wave = 1; lives = 3; gameOver = false;
+          initEnemies();
+        }
+        return;
+      }
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') player.dx = -player.speed;
+      else if (e.code === 'ArrowRight' || e.code === 'KeyD') player.dx = player.speed;
+      else if (e.code === 'Space') fireBullet();
+    });
+
+    window.addEventListener('keyup', e => {
+      if (['ArrowLeft', 'KeyA', 'ArrowRight', 'KeyD'].includes(e.code)) player.dx = 0;
+    });
+
+    function update() {
+      if (gameOver) return;
+
+      // Move player
+      player.x += player.dx;
+      if (player.x < 10) player.x = 10;
+      if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
+
+      // Move Player Bullets
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        bullets[i].y -= bullets[i].speed;
+        if (bullets[i].y < 0) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        // Bullet vs Enemy Collision
+        for (let e of enemies) {
+          if (e.alive && bullets[i] &&
+              bullets[i].x < e.x + e.width &&
+              bullets[i].x + bullets[i].width > e.x &&
+              bullets[i].y < e.y + e.height &&
+              bullets[i].y + bullets[i].height > e.y) {
+            e.alive = false;
+            bullets.splice(i, 1);
+            score += 25;
+            document.getElementById('scoreTxt').innerText = `ĐIỂM: ${score}`;
+            break;
+          }
+        }
+      }
+
+      // Move Enemies
+      let edgeReached = false;
+      let livingCount = 0;
+      for (let e of enemies) {
+        if (e.alive) {
+          livingCount++;
+          e.x += enemySpeed * enemyDirection;
+          if ((e.x > canvas.width - e.width - 10 && enemyDirection > 0) ||
+              (e.x < 10 && enemyDirection < 0)) {
+            edgeReached = true;
+          }
+          if (e.y + e.height >= player.y) {
+            gameOver = true;
+          }
+        }
+      }
+
+      if (edgeReached) {
+        enemyDirection *= -1;
+        for (let e of enemies) {
+          e.y += 18;
+        }
+      }
+
+      if (livingCount === 0) {
+        wave++;
+        document.getElementById('waveTxt').innerText = `ĐỢT TẤN CÔNG: ${wave}`;
+        initEnemies();
+      }
+
+      // Enemy Shooting
+      enemyFireTimer++;
+      if (enemyFireTimer % Math.max(30, 90 - wave * 10) === 0) {
+        const liveEnemies = enemies.filter(e => e.alive);
+        if (liveEnemies.length > 0) {
+          const shooter = liveEnemies[Math.floor(Math.random() * liveEnemies.length)];
+          enemyBullets.push({
+            x: shooter.x + shooter.width / 2,
+            y: shooter.y + shooter.height,
+            width: 3,
+            height: 10,
+            speed: 4 + wave * 0.5
+          });
+        }
+      }
+
+      // Move Enemy Bullets
+      for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        enemyBullets[i].y += enemyBullets[i].speed;
+        if (enemyBullets[i].y > canvas.height) {
+          enemyBullets.splice(i, 1);
+          continue;
+        }
+
+        // Enemy Bullet vs Player
+        const b = enemyBullets[i];
+        if (b.x < player.x + player.width &&
+            b.x + b.width > player.x &&
+            b.y < player.y + player.height &&
+            b.y + b.height > player.y) {
+          enemyBullets.splice(i, 1);
+          lives--;
+          document.getElementById('livesTxt').innerText = `TÀU: ${'🚀'.repeat(Math.max(0, lives))}`;
+          if (lives === 0) gameOver = true;
+        }
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = '#05060a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Starfield
+      ctx.fillStyle = '#fff';
+      for (let i = 0; i < 30; i++) {
+        const sx = (i * 47) % canvas.width;
+        const sy = (i * 61 + Date.now() * 0.05) % canvas.height;
+        ctx.fillRect(sx, sy, 1.5, 1.5);
+      }
+
+      // Draw Player
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.moveTo(player.x + player.width / 2, player.y);
+      ctx.lineTo(player.x + player.width, player.y + player.height);
+      ctx.lineTo(player.x, player.y + player.height);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(player.x + player.width / 2 - 3, player.y + 6, 6, 8);
+
+      // Draw Enemies
+      enemies.forEach(e => {
+        if (e.alive) {
+          ctx.fillStyle = e.color;
+          ctx.beginPath();
+          ctx.roundRect(e.x, e.y, e.width, e.height, 4);
+          ctx.fill();
+          // Eyes
+          ctx.fillStyle = '#000';
+          ctx.fillRect(e.x + 6, e.y + 5, 4, 4);
+          ctx.fillRect(e.x + e.width - 10, e.y + 5, 4, 4);
+        }
+      });
+
+      // Draw Player Bullets
+      ctx.fillStyle = '#38bdf8';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 8;
+      bullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+      ctx.shadowBlur = 0;
+
+      // Draw Enemy Bullets
+      ctx.fillStyle = '#ef4444';
+      enemyBullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+
+      // Game Over Screen
+      if (gameOver) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 30px "Segoe UI"';
+        ctx.textAlign = 'center';
+        ctx.fillText('HẠM ĐỘI BỊ TIÊU DIỆT!', canvas.width / 2, 220);
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px "Segoe UI"';
+        ctx.fillText(`Tổng điểm chiến đấu: ${score}`, canvas.width / 2, 260);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillText('Nhấn phím Space để tái xuất trận 🚀', canvas.width / 2, 300);
+      }
+
+      update();
+      requestAnimationFrame(draw);
+    }
+
+    initEnemies();
+    draw();
+  </script>
+</body>
+</html>

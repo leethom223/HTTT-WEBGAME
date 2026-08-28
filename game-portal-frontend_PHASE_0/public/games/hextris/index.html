@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Hextris 360 Arcade</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #hexCanvas {
+      background: #181b26;
+      border: 2px solid #38bdf8;
+      border-radius: 50%;
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+      cursor: pointer;
+    }
+    .guide-box {
+      margin-top: 15px;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="hexCanvas" width="480" height="480"></canvas>
+  <div class="guide-box">Phím <b>A / D</b> hoặc <b>Mũi tên Trái / Phải</b> để xoay vòng xoay lục giác 🔄</div>
+
+  <script>
+    const canvas = document.getElementById('hexCanvas');
+    const ctx = canvas.getContext('2d');
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    let rotation = 0;
+    let score = 0;
+    let best = localStorage.getItem('hextris_best') || 0;
+    let blocks = [];
+    let frame = 0;
+    let gameOver = false;
+    const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#ec4899', '#a855f7'];
+
+    function spawnBlock() {
+      const side = Math.floor(Math.random() * 6);
+      const color = colors[Math.floor(Math.random() * 4)];
+      blocks.push({
+        side: side,
+        color: color,
+        dist: 220,
+        speed: 2.2 + Math.min(3, score * 0.05)
+      });
+    }
+
+    function reset() {
+      blocks = [];
+      score = 0;
+      rotation = 0;
+      gameOver = false;
+    }
+
+    window.addEventListener('keydown', e => {
+      if (gameOver) { reset(); return; }
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') rotation -= Math.PI / 3;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') rotation += Math.PI / 3;
+    });
+
+    canvas.addEventListener('pointerdown', e => {
+      if (gameOver) { reset(); return; }
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      if (x < canvas.width / 2) rotation -= Math.PI / 3;
+      else rotation += Math.PI / 3;
+    });
+
+    function update() {
+      frame++;
+      if (!gameOver) {
+        if (frame % 45 === 0) spawnBlock();
+
+        for (let i = blocks.length - 1; i >= 0; i--) {
+          blocks[i].dist -= blocks[i].speed;
+
+          // Reached Center Hexagon
+          if (blocks[i].dist <= 50) {
+            score += 15;
+            if (score > best) {
+              best = score;
+              localStorage.setItem('hextris_best', best);
+            }
+            blocks.splice(i, 1);
+          }
+        }
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = '#181b26';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Rotating Hexagon Hub
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI) / 3;
+        const x = 45 * Math.cos(angle);
+        const y = 45 * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Draw Center Hub Lines
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI) / 3;
+        ctx.strokeStyle = colors[i % colors.length];
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(40 * Math.cos(angle), 40 * Math.sin(angle));
+        ctx.lineTo(40 * Math.cos(angle + Math.PI / 3), 40 * Math.sin(angle + Math.PI / 3));
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Draw Incoming Blocks
+      for (let b of blocks) {
+        const sideAngle = (b.side * Math.PI) / 3 + rotation;
+        const x1 = cx + b.dist * Math.cos(sideAngle);
+        const y1 = cy + b.dist * Math.sin(sideAngle);
+        const x2 = cx + b.dist * Math.cos(sideAngle + Math.PI / 3);
+        const y2 = cy + b.dist * Math.sin(sideAngle + Math.PI / 3);
+
+        ctx.strokeStyle = b.color;
+        ctx.lineWidth = 12;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      // HUD Score
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 22px "Segoe UI", Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(score, cx, cy + 8);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '12px "Segoe UI", Arial';
+      ctx.fillText(`KỶ LỤC: ${best}`, cx, 40);
+
+      requestAnimationFrame(() => {
+        update();
+        draw();
+      });
+    }
+
+    draw();
+  </script>
+</body>
+</html>

@@ -78,3 +78,5 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 });
 
 
+
+Route::get('/seed', function () { \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--seed' => true, '--force' => true]); return response()->json(['message' => 'Database seeded successfully']); });

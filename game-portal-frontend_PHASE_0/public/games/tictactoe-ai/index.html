@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Tic Tac Toe Đấu Trí AI</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 10px;
+    }
+    .game-box {
+      background: #181b26;
+      border: 2px solid #38bdf8;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+    .status-bar {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #38bdf8;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 8px;
+    }
+    .cell {
+      background: #232738;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cell:hover { border-color: #38bdf8; background: #2a3045; }
+    .cell.x { color: #38bdf8; }
+    .cell.o { color: #ef4444; }
+    .mode-selector {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-mode {
+      padding: 6px 12px;
+      background: #232738;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn-mode.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+    .btn-reset {
+      padding: 10px 24px;
+      background: #6366f1;
+      border: none;
+      color: #fff;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-reset:hover { background: #4f46e5; }
+  </style>
+</head>
+<body>
+  <div class="game-box">
+    <div class="mode-selector">
+      <button class="btn-mode active" id="btnAi">🤖 Đấu với AI</button>
+      <button class="btn-mode" id="btn2P">👥 2 Người chơi</button>
+    </div>
+
+    <div class="status-bar" id="status">Lượt của: X (Bạn)</div>
+
+    <div class="grid" id="grid"></div>
+
+    <button class="btn-reset" id="btnReset">Ván Mới 🔄</button>
+  </div>
+
+  <script>
+    let board = Array(9).fill('');
+    let turn = 'X';
+    let vsAi = true;
+    let gameOver = false;
+
+    function init() {
+      board = Array(9).fill('');
+      turn = 'X';
+      gameOver = false;
+      document.getElementById('status').innerText = vsAi ? 'Lượt của: X (Bạn)' : 'Lượt của: X';
+      document.getElementById('status').style.color = '#38bdf8';
+
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.onclick = () => makeMove(i);
+        grid.appendChild(cell);
+      }
+    }
+
+    function checkWinner(b) {
+      const wins = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+      ];
+      for (let w of wins) {
+        if (b[w[0]] && b[w[0]] === b[w[1]] && b[w[0]] === b[w[2]]) {
+          return b[w[0]];
+        }
+      }
+      return b.includes('') ? null : 'TIE';
+    }
+
+    function makeMove(idx) {
+      if (gameOver || board[idx] !== '') return;
+
+      board[idx] = turn;
+      render();
+
+      const win = checkWinner(board);
+      if (win) {
+        endGame(win);
+        return;
+      }
+
+      turn = turn === 'X' ? 'O' : 'X';
+      document.getElementById('status').innerText = vsAi
+        ? (turn === 'O' ? 'AI đang suy nghĩ... 🤔' : 'Lượt của: X (Bạn)')
+        : `Lượt của: ${turn}`;
+      document.getElementById('status').style.color = turn === 'X' ? '#38bdf8' : '#ef4444';
+
+      if (vsAi && turn === 'O' && !gameOver) {
+        setTimeout(aiMove, 300);
+      }
+    }
+
+    function aiMove() {
+      // Find winning or blocking move or center
+      const emptyIndices = board.map((v, i) => v === '' ? i : null).filter(v => v !== null);
+      let bestMove = emptyIndices[0];
+
+      // Check if AI can win immediately
+      for (let i of emptyIndices) {
+        const testB = [...board];
+        testB[i] = 'O';
+        if (checkWinner(testB) === 'O') { bestMove = i; break; }
+      }
+
+      // Block player from winning
+      if (bestMove === emptyIndices[0]) {
+        for (let i of emptyIndices) {
+          const testB = [...board];
+          testB[i] = 'X';
+          if (checkWinner(testB) === 'X') { bestMove = i; break; }
+        }
+      }
+
+      // Take center if available
+      if (board[4] === '') bestMove = 4;
+
+      board[bestMove] = 'O';
+      render();
+
+      const win = checkWinner(board);
+      if (win) {
+        endGame(win);
+        return;
+      }
+
+      turn = 'X';
+      document.getElementById('status').innerText = 'Lượt của: X (Bạn)';
+      document.getElementById('status').style.color = '#38bdf8';
+    }
+
+    function endGame(win) {
+      gameOver = true;
+      if (win === 'TIE') {
+        document.getElementById('status').innerText = '🤝 KẾT QUẢ: HÒA NHAU!';
+        document.getElementById('status').style.color = '#f59e0b';
+      } else {
+        document.getElementById('status').innerText = `🏆 CHIẾN THẮNG: ${win}!`;
+        document.getElementById('status').style.color = win === 'X' ? '#38bdf8' : '#ef4444';
+      }
+    }
+
+    function render() {
+      const cells = document.querySelectorAll('.cell');
+      cells.forEach((c, i) => {
+        c.innerText = board[i];
+        c.className = `cell ${board[i].toLowerCase()}`;
+      });
+    }
+
+    document.getElementById('btnAi').onclick = () => {
+      vsAi = true;
+      document.getElementById('btnAi').classList.add('active');
+      document.getElementById('btn2P').classList.remove('active');
+      init();
+    };
+
+    document.getElementById('btn2P').onclick = () => {
+      vsAi = false;
+      document.getElementById('btn2P').classList.add('active');
+      document.getElementById('btnAi').classList.remove('active');
+      init();
+    };
+
+    document.getElementById('btnReset').onclick = init;
+    init();
+  </script>
+</body>
+</html>

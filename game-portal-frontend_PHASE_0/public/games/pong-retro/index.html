@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Pong Arcade 1972 Classic</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-around;
+      width: 600px;
+      padding: 10px;
+      background: #181b26;
+      border: 1px solid #334155;
+      border-radius: 8px 8px 0 0;
+      font-size: 1.2rem;
+      font-weight: 900;
+    }
+    #pongCanvas {
+      background: #000;
+      border: 2px solid #fff;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+    }
+    .guide-text {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <span style="color:#38bdf8">NGƯỜI CHƠI: <span id="pScore">0</span></span>
+    <span style="color:#ef4444">MÁY (AI): <span id="aiScore">0</span></span>
+  </div>
+  <canvas id="pongCanvas" width="600" height="400"></canvas>
+  <div class="guide-text">Dùng phím <b>W / S</b> hoặc <b>↑ / ↓</b> (hoặc di chuyển chuột) để điều khiển thanh vợt bên trái</div>
+
+  <script>
+    const canvas = document.getElementById('pongCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const paddleWidth = 12;
+    const paddleHeight = 75;
+
+    let playerY = (canvas.height - paddleHeight) / 2;
+    let aiY = (canvas.height - paddleHeight) / 2;
+    let playerScore = 0;
+    let aiScore = 0;
+
+    let ballX = canvas.width / 2;
+    let ballY = canvas.height / 2;
+    let ballSpeedX = 5;
+    let ballSpeedY = 3;
+    const ballSize = 10;
+
+    function resetBall() {
+      ballX = canvas.width / 2;
+      ballY = canvas.height / 2;
+      ballSpeedX = -ballSpeedX;
+      ballSpeedY = (Math.random() > 0.5 ? 1 : -1) * 3.5;
+    }
+
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      playerY = e.clientY - rect.top - paddleHeight / 2;
+    });
+
+    window.addEventListener('keydown', e => {
+      if (['ArrowUp', 'KeyW'].includes(e.code)) playerY = Math.max(0, playerY - 30);
+      else if (['ArrowDown', 'KeyS'].includes(e.code)) playerY = Math.min(canvas.height - paddleHeight, playerY + 30);
+    });
+
+    function update() {
+      // Ball movement
+      ballX += ballSpeedX;
+      ballY += ballSpeedY;
+
+      // Top / Bottom wall bounce
+      if (ballY < 0 || ballY > canvas.height - ballSize) {
+        ballSpeedY = -ballSpeedY;
+      }
+
+      // AI Paddle Movement
+      const aiCenter = aiY + paddleHeight / 2;
+      if (aiCenter < ballY - 20) aiY += 4.2;
+      else if (aiCenter > ballY + 20) aiY -= 4.2;
+      aiY = Math.max(0, Math.min(canvas.height - paddleHeight, aiY));
+
+      // Player Paddle Collision
+      if (ballX < 20 + paddleWidth && ballY + ballSize > playerY && ballY < playerY + paddleHeight) {
+        ballSpeedX = Math.abs(ballSpeedX) + 0.2;
+        const deltaY = ballY - (playerY + paddleHeight / 2);
+        ballSpeedY = deltaY * 0.25;
+      }
+
+      // AI Paddle Collision
+      if (ballX > canvas.width - 20 - paddleWidth - ballSize && ballY + ballSize > aiY && ballY < aiY + paddleHeight) {
+        ballSpeedX = -Math.abs(ballSpeedX) - 0.2;
+        const deltaY = ballY - (aiY + paddleHeight / 2);
+        ballSpeedY = deltaY * 0.25;
+      }
+
+      // Score checking
+      if (ballX < 0) {
+        aiScore++;
+        document.getElementById('aiScore').innerText = aiScore;
+        resetBall();
+      } else if (ballX > canvas.width) {
+        playerScore++;
+        document.getElementById('pScore').innerText = playerScore;
+        resetBall();
+      }
+    }
+
+    function draw() {
+      // Clear
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Center Dotted Line
+      ctx.strokeStyle = '#334155';
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Player Paddle
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(20, playerY, paddleWidth, paddleHeight);
+
+      // AI Paddle
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(canvas.width - 20 - paddleWidth, aiY, paddleWidth, paddleHeight);
+
+      // Ball
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(ballX, ballY, ballSize, ballSize);
+
+      update();
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
+</body>
+</html>
